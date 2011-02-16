@@ -60,17 +60,42 @@
 				function fakeServiceStore() {
 					var store = samiam.store.Service(fakesvc);
 					doh.is("function", typeof store.query, "instance looks store-like");
-					
-					// store.get("A").then(function(res) {
-					//     console.log("GET resutls", res);
-					// });
-					// store.query({
-					//     "type": "a"
-					// }).then(function(res) {
-					//     console.log("query resutls", res);
-					// });
-					// 
-				}
+				}, 
+				function storeGet() {
+					var store = samiam.store.Service(fakesvc);
+					var ddfd = new doh.Deferred();
+					dojo.when(
+						store.get("A"),
+						function(res) {
+						    console.log("GET resutls", res);
+							ddfd.callback(res);
+						},
+						function(err) {
+						    console.log("GET error", err);
+							ddfd.errback(err);
+						}
+					);
+					return ddfd;
+				},
+				function storeQuery() {
+					var store = samiam.store.Service(fakesvc);
+					var ddfd = new doh.Deferred();
+
+					dojo.when(
+						store.query({
+						    "type": "a"
+						}),
+						function(res) {
+						    console.log("query resutls", res);
+							ddfd.callback(res);
+						},
+						function(err) {
+						    console.log("query error", err);
+							ddfd.errback(err);
+						}
+					);
+					return ddfd;
+				}	
 			]);
 			
 			doh.run();
