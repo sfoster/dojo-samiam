@@ -12,7 +12,7 @@ dojo.declare("samiam.store.Service", null, {
 	// itemsProperty: String?
 	// 		The indicates the property in the service result to use as the items or results array. 
 	// 		Use a falsy value if the result itself is enumerable
-	itemsProperty: "results",
+	itemsProperty: "",
 	
 	// service: Object
 	// 		A dojox.rpc.Service instance
@@ -56,6 +56,7 @@ dojo.declare("samiam.store.Service", null, {
 				this._mapMethod(name, serviceMethod);
 			}
 		}, this);
+		return this;
 	},
 	get: function() {
 		// summary: 
@@ -91,7 +92,7 @@ dojo.declare("samiam.store.Service", null, {
 		// decorate the service response with QueryResults
 		// TODO: what to do w. all the other response properties other than items?
 		// TODO: QueryResults will add a .total property. But the service might have included one also? Perhaps support a totalProperty 
-		var items = this.itemsProperty ? result[this.itemsProperty] : result;
+		var items = this.itemsProperty ? dojo.getObject(this.itemsProperty, false, result) : result;
 		return dojo.store.util.QueryResults(items);
 	},
 	_onQueryError: function(err) {

@@ -19,34 +19,53 @@
 	<script src="../../../dojo/dojo.js"></script>
 	<script type="text/javascript">
 		dojo.require("samiam.store.Service");
+		dojo.require("dojo.io.script"); // for the twitter service
+		dojo.require("dojo.store.Memory");
+		dojo.require("dojo.store.Cache");
+		dojo.require("dojox.rpc.Service");
+
+		var smd = dojo.fromJson(dojo._getText(dojo.moduleUrl("dojox.rpc.SMDLibrary", "twitter.smd")));
+		console.log("twitter smd: ", smd);
+
+		var service = twitterService = new dojox.rpc.Service(smd);
+		console.log("twitter service: ", service);
+
 		dojo.require("doh.runner");
 		
 
 		var fakesvc = {
-		    get: function(id) {
-		        console.log("Get Service Called");
-		        var def = new dojo.Deferred();
-		        def.callback({
-		            id: id,
-		            name: "Item " + id
-		        });
-		        return def;
-		    },
+			get: function(id) {
+				console.log("Get Service Called");
+				var def = new dojo.Deferred();
+				setTimeout(function(){
+					console.log("service get callback");
+					def.callback({
+						id: id,
+						name: "Item " + id
+					});			
+				}, 25);
+				return def;
+			},
 
-		    query: function(query) {
-		        console.log("query Service Called");
-		        var def = new dojo.Deferred();
-		        def.callback([{
-		            id: 1,
-		            name: "Item1"},
-		        {
-		            id: 3,
-		            name: "Item1"},
-		        {
-		            id: 3,
-		            name: "Item3"}]);
-		        return def;
-		    }
+			query: function(query) {
+				console.log("query Service Called");
+				var def = new dojo.Deferred();
+				setTimeout(function(){
+					console.log("service query callback");
+					def.callback([
+					{
+						id: 1,
+						name: "Item1"},
+					{
+						id: 3,
+						name: "Item1"},
+					{
+						id: 3,
+						name: "Item3"}
+					]);
+				}, 25);
+				return def;
+			}
 		};
 		
 		dojo.ready(function() {
@@ -58,43 +77,48 @@
 					
 				},
 				function fakeServiceStore() {
-					var store = samiam.store.Service(fakesvc);
+					var store = new samiam.store.Service(fakesvc);
 					doh.is("function", typeof store.query, "instance looks store-like");
 				}, 
 				function storeGet() {
-					var store = samiam.store.Service(fakesvc);
+					var store = new samiam.store.Service(fakesvc);
 					var ddfd = new doh.Deferred();
+					var resultPending = true;
 					dojo.when(
 						store.get("A"),
 						function(res) {
-						    console.log("GET resutls", res);
+							resultPending = false;
+							console.log("GET resutls", res);
 							ddfd.callback(res);
 						},
 						function(err) {
-						    console.log("GET error", err);
+							resultPending = false;
+							console.log("GET error", err);
 							ddfd.errback(err);
 						}
 					);
-					return ddfd;
+					return resultPending ? ddfd : null;
 				},
 				function storeQuery() {
-					var store = samiam.store.Service(fakesvc);
+					var store = new samiam.store.Service(fakesvc);
 					var ddfd = new doh.Deferred();
-
+					var resultPending = true;
 					dojo.when(
 						store.query({
-						    "type": "a"
+							"type": "a"
 						}),
 						function(res) {
-						    console.log("query resutls", res);
+							resultPending = false;
+							console.log("query results", res);
 							ddfd.callback(res);
 						},
 						function(err) {
-						    console.log("query error", err);
+							resultPending = false;
+							console.log("query error", err);
 							ddfd.errback(err);
 						}
 					);
-					return ddfd;
+					return resultPending ? ddfd : null;
 				}	
 			]);
 			
