@@ -1,7 +1,7 @@
 dojo.provide("samiam.store.Service");
 
 // based on a quick prototype by dmachi: http://jsfiddle.net/dmachi/LfVv8/
-ServiceStore = function(service, options) {
+samiam.store.Service = function(service, options) {
     // summary:
     //        The Service store wraps an RPC Service using its methods for
     //        making the associated store calls. By default, the store will

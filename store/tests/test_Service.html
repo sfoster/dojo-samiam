@@ -21,10 +21,55 @@
 		dojo.require("samiam.store.Service");
 		dojo.require("doh.runner");
 		
+
+		var fakesvc = {
+		    get: function(id) {
+		        console.log("Get Service Called");
+		        var def = new dojo.Deferred();
+		        def.callback({
+		            id: id,
+		            name: "Item " + id
+		        });
+		        return def;
+		    },
+
+		    query: function(query) {
+		        console.log("query Service Called");
+		        var def = new dojo.Deferred();
+		        def.callback([{
+		            id: 1,
+		            name: "Item1"},
+		        {
+		            id: 3,
+		            name: "Item1"},
+		        {
+		            id: 3,
+		            name: "Item3"}]);
+		        return def;
+		    }
+		};
+		
 		dojo.ready(function() {
+
 			doh.registerTests("Service", [
 				function smokeTest() {
 					doh.t("samiam.store.Service", "class loaded");
+					doh.is("function", typeof samiam.store.Service, "is a function");
+					
+				},
+				function fakeServiceStore() {
+					var store = samiam.store.Service(fakesvc);
+					doh.is("function", typeof store.query, "instance looks store-like");
+					
+					// store.get("A").then(function(res) {
+					//     console.log("GET resutls", res);
+					// });
+					// store.query({
+					//     "type": "a"
+					// }).then(function(res) {
+					//     console.log("query resutls", res);
+					// });
+					// 
 				}
 			]);
 			
