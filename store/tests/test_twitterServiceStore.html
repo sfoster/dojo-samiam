@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Test samiam.store.Service against Twitter service</title>
+	<link id="resetStyles" rel="stylesheet" href="../../../dojo/resources/dojo.css"/>
+	<link id="themeStyles" rel="stylesheet" href="../../../dijit/themes/claro/claro.css"/>
+	<style>
+		body {
+			padding: 1em;
+		}
+	</style>
+	<script>
+		djConfig = {
+			isDebug: true,
+			parseOnLoad: false,
+		}
+	</script>
+	<script src="../../../dojo/dojo.js"></script>
+	<script type="text/javascript">
+		dojo.require("dojo.io.script"); // for the twitter service
+		dojo.require("samiam.store.Service");
+		dojo.require("dojo.store.Memory");
+		dojo.require("dojo.store.Cache");
+		dojo.require("dojox.rpc.Service");
+
+		// sync fetch of twitter smd to simplify this test
+		var smd = dojo.fromJson(dojo._getText(dojo.moduleUrl("dojox.rpc.SMDLibrary", "twitter.smd")));
+		console.log("twitter smd: ", smd);
+
+		var service = twitterService = new dojox.rpc.Service(smd);
+		console.log("twitter service: ", service);
+
+		dojo.ready(function(){
+			console.log("Creating twitterStore");
+			twitterStore = new samiam.store.Service(
+				twitterService, { 
+					// look for service result objects in the 'results' array property
+					itemsProperty: "results",
+					// map the store's query method to the service's search method
+					methodMapping: { query: 'search' } 
+				});
+
+			cachedTwitterStore = dojo.store.Cache(twitterStore, new dojo.store.Memory()); 
+			
+			console.log("querying cachedTwitterStore");
+			cachedTwitterStore.query({
+				q: 'egypt', 
+				result_type: 'popular'
+			}).then(function(items, response) {
+ 				console.log("first query results", items, response);
+
+				dojo.forEach(items, function(item) {
+					dojo.create("li", { innerHTML: item.text }, dojo.byId("itemsList"));
+				});
+
+				var firstId = cachedTwitterStore.getIdentity(items[0]);
+				console.log("identity of first result item: ", firstId);
+				if(firstId) {
+					console.log("trying a byId lookup using get");
+					dojo.when(cachedTwitterStore.get(firstId), function(result) {
+						console.log("get result: ", result)
+						dojo.create("li", { innerHTML: "<em>Most recent: " + result.created_at + "</em>" }, dojo.byId("itemsList"), "first");
+					});
+				}
+			});
+			
+		});
+	</script>
+</head>
+<body class="claro">
+	<div id="ui">
+		<h1>ServiceStore w. Twitter</h1>
+		
+		<h2>Cached service items</h2>
+		<ul id="itemsList"></ul>
+	</div>
+</body>
+</html>
