@@ -67,7 +67,7 @@ var Sequence = function() {
 			dojo.when(
 				stepResult, 
 				dojo.hitch(this, function(res){
-					this._stepResult = res;
+					this._returnValue = res;
 					return this.next();
 				}), 
 				dojo.hitch(this, "onError")
