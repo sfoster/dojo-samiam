@@ -26,60 +26,52 @@ var Sequence = function() {
 		onError: function(err) {
 			console.error("Sequence error:", this.stopOnError);
 			this._runSequence = false;
-			return this._defd ?
-				this._defd.errback(err) :
-				err;
+			this._defd.reject(err);
 			// sequence return value is the exception
 		},
 		run: function() {
 			// summary: 
-			// 		alias for next
-			return this.next.apply(this, arguments);
+			// 		entry point to kick-off the sequence
+			this._defd = new dojo.Deferred(); 
+			
+			this.next.apply(this, arguments); // not sure if passing through args is useful...?
+			return this._defd;
 		},
 		cancel: function() {
 			// summary: 
 			//		Cancel the entire sequence (will only be possible to cancel any pending steps)
 			this._runSequence = false;
-			this._defd && this._defd.cancel();
+			if(this._defd && this._defd.cancel) {
+				this._defd.cancel();
+			}
 		},
 		next: function(){
 			var stepFn = this.shift(), 
 				stepResult;
+				defd = this._defd;
 
 			if(!(stepFn && this._runSequence)) {
 				// the end of the sequence -return/resolve it
 				// if no error has been thrown thus far, the result of the sequence is a callback
-				return this._defd ? 
-					this._defd.callback(this._returnValue) :
-					this._returnValue;
+				return defd && defd.resolve(this._returnValue);
 			}
-			
-			console.log("in next, calling fn");
+
 			try {
 				this._returnValue = stepResult = stepFn.call(null); // fn should already be bound 
 				console.log("in try, stepResult: ", stepResult);
 			} catch(e) {
-				this.onError(e);
+				return this.onError(e);
 			}
-			// return a defd at the first step in the sequence we encounter which is async
-			if(stepResult && (typeof stepResult.then == "function" || stepResult instanceof dojo.Deferred)) {
-				// if a step is async, we want to return a defd representing the whole sequence
-				if(!this._defd) {
-					this._defd = new dojo.Deferred();
-				}
-				
-				// hook the callback of the step to trigger the next step in the sequence
-				(stepResult.then || stepResult.addCallbacks)(
-					dojo.hitch(this, function(res){
-						this._stepResult = res;
-						return this.next();
-					}), 
-					dojo.hitch(this, "onError")
-				);
-				return this._defd;
-			} else {
-				return this.next();
-			}
+			// always return a promise, 
+			// 		i.e. usage is sequence.run().then(...); or dojo.when(sequence.run(), ...)
+			dojo.when(
+				stepResult, 
+				dojo.hitch(this, function(res){
+					this._stepResult = res;
+					return this.next();
+				}), 
+				dojo.hitch(this, "onError")
+			);
 		}
 	});
 };
