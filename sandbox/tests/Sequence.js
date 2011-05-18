@@ -58,35 +58,81 @@ doh.register("sandbox.tests.Sequence", [
 		},
 		function asyncSequence(t){
 			var seq = new Sequence(
-				dojo.partial(asyncAdd, 3, 4)// ,
-				// 				dojo.partial(asyncAdd, 2, 1),
-				// 				dojo.partial(asyncAdd, 1, 1)
+				dojo.partial(asyncAdd, 2, 1),
+				dojo.partial(asyncAdd, 1, 1),
+				dojo.partial(asyncAdd, 3, 4)
 			);
 			var testDefd = new doh.Deferred();
 			
 			dojo.when(seq.run(), function(result){
-				console.log("sequence callback: ", result);
 				if(7 == result) {
 					testDefd.callback(true);
 				} else {
 					testDefd.errback( new Error("Expected 7, got: " + result));
 				}
 			});
-			console.log("returning test defd");
 			return testDefd;
-		}/* ,
-		function injectIntoAsyncSequence(t){
+		},
+		function mixedSequence(t){
 			var seq = new Sequence(
-				dojo.partial(add, 3, 4),
+				dojo.partial(asyncAdd, 2, 1),
+				dojo.partial(add, 1, 1),
+				dojo.partial(add, 3, 4)
+			);
+			var testDefd = new doh.Deferred();
+			
+			dojo.when(seq.run(), function(result){
+				if(7 == result) {
+					testDefd.callback(true);
+				} else {
+					testDefd.errback( new Error("Expected 7, got: " + result));
+				}
+			});
+			return testDefd;
+		},
+		
+		function postpendIntoAsyncSequence(t){
+			var seq = new Sequence(
+				dojo.partial(asyncAdd, 3, 4),
 				function() {
-					seq.push(function(){
-						return "final";
+					console.log("injecting another async step in seq: ", seq);
+					seq.push(dojo.partial(asyncAdd, 2, 1));
+				}
+			);
+			dojo.when(seq.run(), function(result){
+				t.is(3, result);
+			})
+		},
+		function prependIntoAsyncSequence(t){
+			var prepended = false;
+			var seq = new Sequence(
+				dojo.partial(asyncAdd, 3, 4),
+				function() {
+					console.log("injecting another async step in seq: ", seq);
+					// should inject a step to set prepended flag to true
+					seq.unshift(function(){
+						var pdefd = new dojo.Deferred();
+						setTimeout(function(){
+							prepended = true;
+							pdefd.resolve(true);
+						}, 100);
+						return pdefd;
 					});
 				},
-				dojo.partial(add, 1, 1)
+				// should still run last and return 3+4 as sequence result
+				dojo.partial(add, 3, 4)
 			);
-			t.is("final", seq.run());
-		} */
+			var testDefd = new doh.Deferred();
+			
+			dojo.when(seq.run(), function(result){
+				if(prepended && 7 == result) {
+					testDefd.callback(true);
+				} else {
+					testDefd.errback(new Error("prepended step error"));
+				}
+			});
+			return testDefd;
+		}
 
 ]);
 
