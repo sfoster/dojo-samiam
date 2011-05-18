@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<title>Browser-based Sequence tests</title>
-	<script type="text/javascript" src="../../dojo/dojo.js"></script>
+	<script type="text/javascript" src="../../../dojo/dojo.js"></script>
 	<script>
 		dojo.ready(function(){
 			function echo(msg) {
@@ -12,7 +12,7 @@
 				}, "logList");
 			}
 			console.log("ready: ", require);
-			 require(["./Sequence.js"], function(Sequence){
+			 require(["../Sequence.js"], function(Sequence){
 				dojo.connect(console, "log", echo);
 				console.log("ready");
 				
