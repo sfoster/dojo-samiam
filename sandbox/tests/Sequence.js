@@ -37,7 +37,10 @@ doh.register("sandbox.tests.Sequence", [
 				dojo.partial(add, 2, 1),
 				dojo.partial(add, 1, 1)
 			);
-			t.is(2, seq.run());
+			
+			dojo.when(seq.run(), function(result){
+				t.is(2, result);
+			});
 		},
 		function injectIntoSyncSequence(t){
 			var seq = new Sequence(
@@ -49,7 +52,9 @@ doh.register("sandbox.tests.Sequence", [
 				},
 				dojo.partial(add, 1, 1)
 			);
-			t.is("final", seq.run());
+			dojo.when(seq.run(), function(result){
+				t.is("final", result);
+			});
 		},
 		function asyncSequence(t){
 			var seq = new Sequence(
@@ -58,16 +63,16 @@ doh.register("sandbox.tests.Sequence", [
 				// 				dojo.partial(asyncAdd, 1, 1)
 			);
 			var testDefd = new doh.Deferred();
-			var seqResult = seq.run();
-			dojo.when(seqResult, function(result){
+			
+			dojo.when(seq.run(), function(result){
 				console.log("sequence callback: ", result);
-				console.log("same as sequence return value? ", seqResult == result);
 				if(7 == result) {
 					testDefd.callback(true);
 				} else {
 					testDefd.errback( new Error("Expected 7, got: " + result));
 				}
-			})
+			});
+			console.log("returning test defd");
 			return testDefd;
 		}/* ,
 		function injectIntoAsyncSequence(t){
