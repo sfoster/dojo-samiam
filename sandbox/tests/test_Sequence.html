@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Browser-based Sequence tests</title>
+	<script type="text/javascript" src="../../dojo/dojo.js"></script>
+	<script>
+		dojo.ready(function(){
+			function echo(msg) {
+				dojo.create("li",{
+					innerHTML: Array.prototype.join.call(arguments, " ")
+				}, "logList");
+			}
+			console.log("ready: ", require);
+			 require(["./Sequence.js"], function(Sequence){
+				dojo.connect(console, "log", echo);
+				console.log("ready");
+				
+				var thing = {
+					onBegin: function(){
+						var defd = new dojo.Deferred();
+						setTimeout(function(){
+							console.log("onBegin callback after 1000");
+							defd.callback("begun");
+						}, 1000)
+						return defd;
+					},
+					onMiddle: function(){
+						console.log("onMiddle function (sync)");
+					},
+					onEnd: function(){
+						var defd = new dojo.Deferred();
+						setTimeout(function(){
+							console.log("onEnd callback after 20");
+							defd.callback("done");
+						}, 20)
+						return defd;
+					},
+					mistake: function() {
+						throw new Error("Deliberate mistake should be caught");
+					},
+					start: function(){
+						var sequence = new Sequence(
+							dojo.hitch(this, "onBegin"),
+							dojo.hitch(this, "onMiddle"),
+							dojo.hitch(this, "onEnd")
+						); 
+						sequence.nom = "First Sequence";
+						seq2 = new Sequence(
+							dojo.hitch(this, "onBegin"),
+							dojo.hitch(this, "mistake"),
+							dojo.hitch(this, "onEnd")
+						);
+						seq2.nom = "seq2";
+						
+						dojo.when(sequence.run(), function(result){
+							console.log("Done:", result);
+							console.log("starting seq2");
+							dojo.connect(seq2, "onError", function(err){
+								console.log("caught error in seq2: ", err);
+							})
+							seq2.run();
+						});
+					}
+				}
+				thing.start();
+			})
+		})
+	</script>
+</head>
+<body>
+<h1>Sequence test</h1>	
+<ol id="logList"></ol>
+</body>
+</html>
